@@ -1,0 +1,28 @@
+# MCU build artifacts
+build/
+Debug/
+Release/
+*.o
+*.d
+*.a
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.su
+# Personal IDE and operating-system files
+.vscode/
+.idea/
+*.launch
+*.launches
+*.uvguix.*
+*.user
+*.swp
+*~
+.DS_Store
+Thumbs.db
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
