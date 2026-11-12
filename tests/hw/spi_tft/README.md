@@ -73,6 +73,4 @@ Không có số đo/ảnh phần cứng để ghi PASS cho kit. Không đưa ELF
 
 ## Tình trạng nền tích hợp khi push
 
-Nhánh driver được triển khai từ develop `b76da3e` (cũng là đầu feature/hal-spi-tft khi bắt đầu). Trong lúc chuẩn bị, develop được cập nhật đến `26739d3` với GAME/ADC. Build riêng develop mới trả lỗi vì API chung chưa có các định nghĩa GAME_MAX_BULLETS, GAME_MAX_EGGS, GAME_MAX_BOOMS, GAME_CHICKEN_COLS... mà game_engine.h/.c đang dùng.
-
-Các kết quả PASS ở trên áp dụng cho nhánh SPI và harness của nhánh này. Cần hoàn thiện API GAME trên develop trước khi đồng bộ/ghép nhánh; ghi chú này không thay đổi hoặc merge code GAME/ADC. main.c, app/, BSP và FreeRTOSConfig.h không bị sửa bởi phần SPI/TFT.
+Đã đồng bộ với develop; lỗi API GAME trước đây đã được giải quyết bởi PR #7.
