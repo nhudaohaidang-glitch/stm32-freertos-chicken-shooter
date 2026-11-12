@@ -96,9 +96,15 @@ Chủ repo `nhudaohaidang-glitch` xác nhận trong chat ngày 12/11/2026: **"Đ
 
 ## 5. Điều kiện chốt release v1.0.0
 
-- [ ] Điền đủ bằng chứng ở mục 3 và 4 cho commit tích hợp thực sự được nạp lên kit.
+Các ô đã đánh dấu dưới đây chỉ ghi việc đã xác nhận tại mốc `develop` **`a861790`** sau khi PR #16 merge. Các bước review, merge release và tạo tag được giữ riêng, chưa đánh dấu trước khi thực hiện.
+
+- [x] Ghi báo cáo kit ngày 12/11/2026 cho commit `1c21dd8`, clock 72 MHz, PLAYING/khi mất máu, khoảng FPS/T và heap/stack tại mục 3.
+- [x] Ghi đủ 12/12 bước chức năng PASS theo xác nhận của nhóm tại mục 4.
+- [x] Tài liệu phân công và báo cáo kit đã vào `develop` qua PR #15 (`7c2e1b5`) và #16 (`a861790`).
+- [x] [CI firmware #57](https://github.com/nhudaohaidang-glitch/stm32-freertos-chicken-shooter/actions/runs/43243685585) của mốc `a861790`: build firmware, build các harness và host-tests thành công.
+- [ ] Bổ sung ảnh/log gốc và chốt số T đầy đủ với người test; các kịch bản chưa có số riêng ở mục 3 vẫn để trống.
 - [ ] Review/xử lý cách tính FPS theo thời gian thực ở mục 1 trước khi dùng số FPS để nghiệm thu.
-- [ ] PR cập nhật tài liệu vào `develop` được thành viên khác review và merge.
-- [ ] CI của commit cuối trên `develop` và PR release thành công.
+- [ ] PR cập nhật checklist này được thành viên khác review và merge vào `develop`.
+- [ ] Kiểm tra lại CI của head cuối trên `develop` và PR release sau mọi cập nhật tiếp theo.
 - [ ] PR release #2 (`develop -> main`) được người khác review và merge bằng **Create a merge commit**.
 - [ ] Sau merge, leader tạo tag `v1.0.0` trỏ vào commit release trên `main`; không gắn tag vào bootstrap hoặc commit chưa nghiệm thu.
