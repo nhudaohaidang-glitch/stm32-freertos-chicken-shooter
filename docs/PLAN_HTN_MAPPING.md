@@ -34,7 +34,7 @@ Ký hiệu: ✅ dùng trong dự án · ➖ có mặt nhưng không phải trọ
 
 | Mục | | Ghi chú |
 |---|---|---|
-| DMA | ❌ bỏ | SPI polling đủ nhanh (~1,5 ms/khung); đề cương ghi DMA "không bắt buộc" |
+| DMA | ❌ bỏ | Dùng SPI polling theo phạm vi đã chốt; hiệu năng cần đo trên kit. Đề cương ghi DMA "không bắt buộc" |
 | Power management | ❌ | Không làm |
 | Lập lịch | ➖ | Dùng bộ lập lịch FreeRTOS (mục 4) thay vì lập lịch bare-metal |
 | Watchdog | ❌ | Không làm |
@@ -52,7 +52,7 @@ Ký hiệu: ✅ dùng trong dự án · ➖ có mặt nhưng không phải trọ
 | Mutex | ✅ | Khóa bus SPI/I2C/ADC, timeout hữu hạn, priority inheritance |
 | Event group, software timer | ❌ | Không dùng (`configUSE_TIMERS 0`) |
 | Heap và stack (mở rộng) | ✅ | heap_4 10 KiB; OLED hiện `HEAP free/min`, `STK` high-water mark 3 task; hook stack overflow / malloc fail |
-| Phân tích lập lịch, hiệu năng (mở rộng) | ✅ | FPS thực, thời gian vẽ lâu nhất (DWT), bộ đếm chu kỳ GAME bị trễ |
+| Phân tích lập lịch, hiệu năng (mở rộng) | ✅ có triển khai, chưa nghiệm thu | Thống kê frame (cần kiểm tra cách tính FPS khi cửa sổ trễ), thời gian vẽ DWT, bộ đếm chu kỳ GAME bị trễ; xem `EVALUATION.md` |
 
 ## 5. Bài tập lớn — mục tiêu
 
@@ -60,7 +60,7 @@ Ký hiệu: ✅ dùng trong dự án · ➖ có mặt nhưng không phải trọ
 |---|---|---|
 | Sử dụng phối hợp ngoại vi | ✅ | ADC + GPIO/EXTI (input) -> FSM -> SPI (TFT) + I2C (OLED) trong một hệ thống |
 | Quản lý luồng thông tin | ✅ | HMI -> queue sự kiện -> GAME -> snapshot + notification -> RENDER; GAME là nơi duy nhất ghi state |
-| Đánh giá hoạt động | ✅ (đo trên kit) | Số đo trên OLED; bảng `docs/EVALUATION.md` — **nhóm điền số thật** |
+| Đánh giá hoạt động | CHƯA TEST trên kit | Có hiển thị thống kê trên OLED; bảng `docs/EVALUATION.md` — **nhóm điền số thật sau khi chạy kit** |
 | Xây dựng kiến trúc | ✅ | BSP / HAL / APP, sơ đồ trong `docs/ARCHITECTURE.md` |
 | Module hóa phần mềm, thư viện | ✅ | Driver tách file + header API, engine thuần C tách khỏi RTOS |
 | Đóng gói và thử nghiệm | ✅ | Quy trình Git main/develop/feature/integration, CI, harness test kit, tag `v1.0.0` |

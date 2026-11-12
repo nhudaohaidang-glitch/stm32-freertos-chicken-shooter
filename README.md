@@ -2,7 +2,7 @@
 
 Đề tài: **Hệ thống đồ họa thời gian thực trên vi điều khiển STM32 sử dụng FreeRTOS – ứng dụng game bắn gà**.
 
-**Trạng thái:** game hoàn chỉnh về phần mềm với **3 ngoại vi chính SPI1 (TFT), I2C1 (OLED), ADC1 (joystick)** + GPIO/EXTI cho nút: BSP 72 MHz, ba task HMI/GAME/RENDER, **state machine hướng sự kiện** (chủ đề mở rộng mục 6), render vùng bẩn không framebuffer, OLED hiển thị điểm/máu và số đo FPS/heap/stack. Đã unit test FSM trên PC. **Kết quả trên kit phải được nhóm đo và điền vào [docs/EVALUATION.md](docs/EVALUATION.md) trước khi release `v1.0.0`.**
+**Trạng thái:** đã ghép phần mềm với **3 ngoại vi chính SPI1 (TFT), I2C1 (OLED), ADC1 (joystick)** + GPIO/EXTI cho nút: BSP 72 MHz, ba task HMI/GAME/RENDER, **state machine hướng sự kiện** (chủ đề mở rộng mục 6), render vùng bẩn không framebuffer, OLED hiển thị điểm/máu và thống kê FPS/heap/stack. Đã build và unit test FSM trên PC; **CHƯA TEST trên kit**. **Kết quả trên kit phải được nhóm đo và điền vào [docs/EVALUATION.md](docs/EVALUATION.md) trước khi release `v1.0.0`.**
 
 ## Đọc trước khi làm
 
@@ -20,7 +20,7 @@
 - Đã bỏ khỏi phạm vi: buzzer PWM, UART debug, DMA (xem [đối chiếu plan](docs/PLAN_HTN_MAPPING.md)).
 - Ba task: HMI, GAME, RENDER; GAME cập nhật 20 ms và là nơi duy nhất ghi game state.
 - FSM: MENU, PLAYING, PAUSED, GAME_OVER. Queue + Task Notification cho IPC.
-- Không dùng framebuffer RGB565 toàn màn hình (153.600 byte). TFT: hai buffer nhỏ tổng 2.560 byte; OLED: 1.024 byte. Đo FPS thực tế, không cam kết FPS trước khi đo.
+- Không dùng framebuffer RGB565 toàn màn hình (153.600 byte). TFT: một buffer dải 1.280 byte; OLED: 1.024 byte pixel và 8 byte điều khiển. Đo FPS thực tế, không cam kết FPS trước khi đo.
 
 ![Sơ đồ khối từ đề cương](docs/references/hardware-block-diagram.png)
 

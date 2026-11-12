@@ -78,7 +78,7 @@ Kiểm chứng: `tests/host/test_engine.c` duyệt **đủ 44 ô** (4 trạng th
 2. Mỗi vùng: `ili9341_begin()` mở cửa sổ, ghép từng dải tối đa 640 pixel trong **một bộ đệm 1.280 B**: nền sao (băm tọa độ, không tốn RAM) -> sprite -> hộp chữ -> chữ, rồi gửi bằng SPI polling. Mỗi pixel ghi một lần với màu cuối: không nhấp nháy.
 3. RENDER so với **khung đã vẽ thực sự** (`s_drawn`), nên khi notification bị gộp vẫn không sót vết.
 
-Ước lượng lưu lượng: trung bình ~3,4 KB/khung PLAYING (~1,5 ms SPI ở 18 MHz), tối đa ~14,6 KB (~6,5 ms); vẽ toàn màn 153,6 KB (~68 ms) chỉ khi đổi màn hình. Polling đủ nhanh nên không cần DMA.
+Ước lượng lưu lượng khi thiết kế: trung bình ~3,4 KB/khung PLAYING (~1,5 ms chỉ tính truyền SPI ở 18 MHz), ~14,6 KB (~6,5 ms); vẽ toàn màn 153,6 KB (~68 ms). Đây không phải số đo hoặc giới hạn lưu lượng đã kiểm chứng: còn thời gian ghép pixel, lệnh và preemption. Dự án dùng polling theo phạm vi đã chốt; hiệu năng thực cần đo trên kit.
 
 ## HAL
 
