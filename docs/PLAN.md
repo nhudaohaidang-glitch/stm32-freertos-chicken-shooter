@@ -5,10 +5,10 @@ Phạm vi: **3 ngoại vi chính SPI1 + I2C1 + ADC1** (GPIO/EXTI cho nút), ch�
 | Vai trò | GitHub | Ngoại vi | Nhánh HAL (M1) | Nhánh APP (M2) |
 |---|---|---|---|---|
 | Leader + TV1 | `nhudaohaidang-glitch` | SPI1 (TFT) + cấu hình chung | `feature/bsp-clock`, `feature/hal-spi-tft` | `feature/app-api`, `feature/task-render`, `integration/system-v1` |
-| TV2 | `hoangdat06022005-commits` | ADC1 (joystick) + GPIO/EXTI (nút) | `feature/hal-adc-gpio` | `feature/task-hmi`, `feature/task-game` (FSM) |
-| TV3 | Nguyễn Khắc Lộc | I2C1 (OLED) | `feature/hal-i2c-pwm` (phần PWM đã gỡ) | `feature/oled-view-tests` (OLED HUD + số đo, unit test FSM, CI) |
+| TV2 | `hoangdat06022005-commits` | ADC1 (joystick) + GPIO/EXTI (nút) | `feature/hal-adc-gpio` | `feature/task-game` (FSM) |
+| TV3 — Nguyễn Khắc Lộc | `bestteemo1324-svg` | I2C1 (OLED) | `feature/hal-i2c-pwm` (phần PWM đã gỡ) | `feature/task-hmi`, `feature/oled-view-tests` (OLED HUD + số đo, unit test FSM, CI) |
 
-Nhóm sửa bảng nếu phân vai khác thực tế. Mỗi người commit/push bằng tài khoản của mình; người khác review PR. TV3 viết `oled_view.c` để TV1 gọi trong RENDER, tránh hai người cùng sửa `task_render.c`. Không thêm task thứ tư.
+Phân công trên được đối chiếu với lịch sử đã merge vào `develop`: HMI do Nguyễn Khắc Lộc thực hiện (`64843d2`), GAME do `hoangdat06022005-commits` thực hiện (`cc88d51`), OLED view do Nguyễn Khắc Lộc thực hiện (`821c02f`). TV2 giữ phần driver ADC/GPIO; TV3 dùng API đó trong task HMI. Mỗi người commit/push bằng tài khoản của mình; người khác review PR. TV3 viết `oled_view.c` để TV1 gọi trong RENDER, tránh hai người cùng sửa `task_render.c`. Không thêm task thứ tư.
 
 ## M0 — khởi tạo (đã chuẩn bị cục bộ)
 
@@ -20,7 +20,7 @@ Nhóm sửa bảng nếu phân vai khác thực tế. Mỗi người commit/push
 - [ ] Thêm thành viên, leader và quyền review (leader kiểm tra trong Settings -> Collaborators).
 - [ ] Áp dụng branch protection trên GitHub.
 
-Build được khung không có nghĩa M1 hoàn thành. CI được chuẩn bị nhưng chưa chạy trên GitHub khi chưa có remote.
+Build được khung không có nghĩa M1 hoàn thành. Workflow `firmware` đã có lần chạy thành công trên GitHub; CI kiểm tra build/host test, không xác nhận phần cứng.
 
 ## M1 — bring-up và HAL
 
@@ -38,7 +38,7 @@ Build được khung không có nghĩa M1 hoàn thành. CI được chuẩn bị
 | PR -> develop | Người làm | Nội dung |
 |---|---|---|
 | `feature/app-api` | Leader | Bảng tài nguyên `app_cfg.h`, snapshot v2 `game_types.h`, helper IPC, ARCHITECTURE |
-| `feature/task-hmi` | TV2 | `task_hmi.c`: joystick, chống dội, EXTI -> notification, auto-fire, sự kiện |
+| `feature/task-hmi` | TV3 — Nguyễn Khắc Lộc | `task_hmi.c`: dùng driver ADC/GPIO của TV2, chống dội, EXTI -> notification, auto-fire, sự kiện |
 | `feature/task-game` | TV2 | `game_engine.c` + `task_game.c`: **FSM**, va chạm, điểm, HP, đợt |
 | `feature/oled-view-tests` | TV3 | `oled_view.c` (HUD + FPS/heap/stack), unit test FSM 44 ô, CI |
 | `feature/task-render` | TV1 | `render_tft.c` + `task_render.c`: vùng bẩn, FPS, số đo |
@@ -48,5 +48,7 @@ Mỗi nhánh tạo từ develop mới nhất tại thời điểm bắt đầu; 
 ## M3 — tích hợp và release
 
 `integration/system-v1` (leader): `main.c` (BSP -> HAL -> IPC -> task -> scheduler), cập nhật tài liệu, đo trên kit theo `docs/EVALUATION.md`. PR integration -> develop (merge commit), rồi PR develop -> main, tag `v1.0.0`.
+
+Tích hợp đã vào `develop` qua PR #14, merge commit `1c21dd8`. Việc còn lại: cập nhật bằng chứng kit qua PR `docs/final-eval -> develop`, review cách tính FPS, rồi dùng PR #2 (`develop -> main`) cho release. Đã đóng PR cũ #1 và #4 vì code tương ứng đã vào `develop` qua #5/#9 và #11; không merge hai PR đó vào `main`.
 
 Không phát hành khi chưa có số đo kit thực; không tạo PR/test/tag giả.
