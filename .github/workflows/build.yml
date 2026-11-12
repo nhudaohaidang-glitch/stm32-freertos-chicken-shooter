@@ -15,11 +15,20 @@ jobs:
           sudo apt-get install -y --no-install-recommends gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi libnewlib-dev
       - name: Compile and link (not a hardware test)
         run: make -j2 check
+      - name: Build on-kit harnesses
+        run: |
+          for t in tests/hw/*/; do make -C "$t"; done
       - uses: actions/upload-artifact@v4
         with:
-          name: firmware-scaffold
+          name: firmware
           path: |
             build/firmware.elf
             build/firmware.bin
             build/firmware.hex
             build/firmware.map
+  host-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: FSM / game engine unit tests on PC (not a hardware test)
+        run: make -C tests/host test
