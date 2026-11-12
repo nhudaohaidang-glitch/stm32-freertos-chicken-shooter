@@ -2,7 +2,7 @@
 
 Tài liệu tách rõ **số đã có không cần kit** và **số phải đo trên kit**. Không chép số kiểm thử PC sang cột kit.
 
-**Trạng thái: CHƯA ĐỦ BẰNG CHỨNG NGHIỆM THU KIT / CHƯA SẴN SÀNG RELEASE.** Nhóm đã báo lại `HEAP 5384/5384` và `STK 148/202/288` trong ảnh danh sách việc còn lại. Chưa có ảnh OLED/log gốc, ngày đo, commit đã nạp, clock, tình huống đo, FPS, thời gian vẽ hoặc kết quả từng bước kiểm thử chức năng. Các số đã báo được ghi riêng ở mục 3; chưa đánh dấu PASS hay hoàn tất nghiệm thu.
+**Trạng thái: CHƯA ĐỦ BẰNG CHỨNG NGHIỆM THU KIT / CHƯA SẴN SÀNG RELEASE.** Nhóm đã báo lại `HEAP 5384/5384` và `STK 148/202/288` trong ảnh danh sách việc còn lại; tin nhắn bổ sung báo FPS hiển thị khoảng **37–50** (có giá trị **50**) và T **15561–21xxx µs**. Giữ nguyên phần `21xxx` vì chưa có số chính xác. Chưa có ảnh OLED/log gốc, ngày đo, commit đã nạp, clock, tình huống đo hoặc kết quả từng bước kiểm thử chức năng. Các số đã báo được ghi riêng ở mục 3; chưa đánh dấu PASS hay hoàn tất nghiệm thu.
 
 ## 1. Cách lấy số liệu trên kit
 
@@ -42,14 +42,18 @@ Lưu lượng SPI ước lượng khi thiết kế: trung bình ~3,4 KB/khung (~
 
 ## 3. Bảng đo trên kit (nhóm điền, đọc trên OLED)
 
-Số liệu nhận từ nhóm qua ảnh danh sách công việc, **chưa có metadata và bằng chứng đo gốc đi kèm**:
+Số liệu nhận từ nhóm qua ảnh danh sách công việc và tin nhắn bổ sung, **chưa có metadata và bằng chứng đo gốc đi kèm**:
 
 | Số liệu được báo | Giá trị | Đơn vị / thứ tự | Mức xác nhận |
 |---|---|---|---|
 | HEAP free/min | 5384 / 5384 | byte | Nhóm báo lại; chưa xác định commit, thời điểm và tình huống |
 | STK H/G/R | 148 / 202 / 288 | word còn trống nhỏ nhất của HMI / GAME / RENDER | Nhóm báo lại; chưa xác định commit, thời điểm và tình huống |
+| FPS hiển thị | khoảng 37–50; có giá trị 50 | Số trên dòng FPS của OLED | Tin nhắn báo lại; chưa xác định commit/tình huống hoặc xác nhận cửa sổ đo đúng 1 s |
+| T | 15561–21xxx | µs | Tin nhắn báo lại; giữ nguyên `21xxx`, chưa có giới hạn trên chính xác |
 
-Không gán hai bộ số trên vào MENU, PLAYING hay chạy 10 phút khi chưa biết tình huống thực tế. `STK` là mức còn trống nhỏ nhất từng có, không phải lượng stack đã dùng. FPS và T vẫn cần đọc lúc PLAYING; với bản hiện tại phải review cách tính FPS nêu ở mục 1.
+Tin nhắn bổ sung nguyên văn: `50  15561-21xxx` và `Fps 37-50`. Tương ứng, T được báo từ 15,561 ms đến khoảng 21 ms; đây chưa phải khoảng có giới hạn trên chính xác. Khoảng FPS là số hiển thị được báo lại, chưa phải kết quả đã xác minh theo thời gian thực.
+
+Không gán các số trên vào MENU, PLAYING hay chạy 10 phút khi chưa biết tình huống thực tế, và không coi là các giá trị được lấy đồng thời. `STK` là mức còn trống nhỏ nhất từng có, không phải lượng stack đã dùng. Nhóm cần xác nhận tình huống PLAYING và T đầy đủ; với bản hiện tại phải review cách tính FPS nêu ở mục 1.
 
 Nhóm bổ sung ngày đo, commit đã nạp, clock xác nhận và ảnh/log cho từng dòng bên dưới. Không dùng số minh họa ở mục 1 làm kết quả.
 
