@@ -3,8 +3,10 @@ CC := $(CROSS_COMPILE)gcc
 OBJCOPY := $(CROSS_COMPILE)objcopy
 SIZE := $(CROSS_COMPILE)size
 RTOS := middlewares/FreeRTOS-Kernel
+# -Og dễ debug; bản demo/đo FPS: make OPT=-O2
+OPT ?= -Og
 CPPFLAGS := -Ibsp/inc -Ihal/inc -Iapp/inc -Iconfig -I$(RTOS)/include -I$(RTOS)/portable/GCC/ARM_CM3
-CFLAGS := -mcpu=cortex-m3 -mthumb -mfloat-abi=soft -std=c11 -Og -g3 -Wall -Wextra -Werror -ffunction-sections -fdata-sections -ffreestanding -MMD -MP
+CFLAGS := -mcpu=cortex-m3 -mthumb -mfloat-abi=soft -std=c11 $(OPT) -g3 -Wall -Wextra -Werror -ffunction-sections -fdata-sections -ffreestanding -MMD -MP
 LDFLAGS := -mcpu=cortex-m3 -mthumb -mfloat-abi=soft -Tlinker/stm32f103c8.ld -nostartfiles --specs=nosys.specs -Wl,--gc-sections,-Map=build/firmware.map -Wl,--print-memory-usage
 SOURCES := main.c $(wildcard bsp/src/*.c hal/src/*.c app/src/*.c) $(RTOS)/tasks.c $(RTOS)/queue.c $(RTOS)/list.c $(RTOS)/portable/GCC/ARM_CM3/port.c $(RTOS)/portable/MemMang/heap_4.c
 OBJECTS := $(addprefix build/,$(SOURCES:.c=.o))
