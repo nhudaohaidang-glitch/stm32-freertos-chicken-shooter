@@ -78,7 +78,7 @@ Kiểm chứng: `tests/host/test_engine.c` duyệt **đủ 44 ô** (4 trạng th
 2. Mỗi vùng: `ili9341_begin()` mở cửa sổ, ghép từng dải tối đa 640 pixel trong **một bộ đệm 1.280 B**: nền sao (băm tọa độ, không tốn RAM) -> sprite -> hộp chữ -> chữ, rồi gửi bằng SPI polling. Mỗi pixel ghi một lần với màu cuối: không nhấp nháy.
 3. RENDER so với **khung đã vẽ thực sự** (`s_drawn`), nên khi notification bị gộp vẫn không sót vết.
 
-Ước lượng lưu lượng: trung bình ~3,4 KB/khung PLAYING (~1,5 ms SPI ở 18 MHz), tối đa ~14,6 KB (~6,5 ms); vẽ toàn màn 153,6 KB (~68 ms) chỉ khi đổi màn hình. Polling đủ nhanh nên không cần DMA.
+Ước lượng lưu lượng khi thiết kế: trung bình ~3,4 KB/khung PLAYING (~1,5 ms chỉ tính truyền SPI ở 18 MHz), ~14,6 KB (~6,5 ms); vẽ toàn màn 153,6 KB (~68 ms). Đây không phải số đo hoặc giới hạn lưu lượng đã kiểm chứng: còn thời gian ghép pixel, lệnh và preemption. Dự án dùng polling theo phạm vi đã chốt; hiệu năng thực cần đo trên kit.
 
 ## HAL
 
@@ -96,16 +96,16 @@ Ngắt duy nhất gọi API FreeRTOS là EXTI15_10, ưu tiên số 6 ≥ `config
 
 SRAM tối đa 20 KiB. Framebuffer 240×320×2 = 153.600 B không phù hợp.
 
-| Thành phần | Ngân sách ban đầu |
-|---|---:|
-| Heap FreeRTOS (gồm task stack/TCB/queue cấp phát động) | 10.240 B |
-| Stack HMI / GAME / RENDER | 192 / 256 / 384 words, nằm **trong heap**, không cộng lần hai |
-| Idle stack | 128 words, nằm trong heap |
-| Hai buffer TFT | 2 × (320 pixel × 2 dòng × 2 B) = 2.560 B, chưa cấp trong stub |
-| Buffer OLED | 1.024 B, chưa cấp trong stub |
-| MSP / ISR stack dự trữ | 1.024 B |
-| Còn lại | Globals kernel/driver/game state, alignment và margin |
+| Thành phần | Ngân sách đề cương | Thực tế (map file) |
+|---|---:|---:|
+| Heap FreeRTOS `ucHeap` (stack + TCB + queue + mutex) | — | 10.240 B |
+| Stack HMI / GAME / RENDER (trong heap) | — | 192 / 256 / 384 words |
+| Bộ đệm dải TFT | 2.560 B (2 bộ đệm, dự trù DMA) | 1.280 B (1 bộ đệm, polling) |
+| Bộ đệm OLED (8 × 129 B, kèm byte điều khiển) | 1.024 B | 1.032 B |
+| Danh sách vùng bẩn + sprite list + 2 snapshot | — | ~1,0 KB |
+| MSP / ISR stack dự trữ | — | 1.024 B |
+| **Tổng `.data + .bss` + MSP** | ≤ 20.480 B | **~14,8 KB** (`_ebss` = 0x20003750) |
 
-Buffer tối đa 320 pixel/line cho phép chọn portrait/landscape sau này; chiều rộng thực phải thống nhất với orientation. Không cấp hai framebuffer toàn màn hình. Linker assert không lấn vùng MSP; `.main_stack` nằm ở đỉnh RAM nên `--print-memory-usage` có thể báo RAM 100% do khoảng trống giữa `.bss` và stack: đọc địa chỉ `_ebss`, `.main_stack`, bảng `size` và map để tính dung lượng thật.
+`--print-memory-usage` báo RAM 100% vì `.main_stack` cố định ở đỉnh RAM; dung lượng thật đọc theo `_ebss` + 1 KiB MSP.
 
-Khi nghiệm thu: ghi `xPortGetMinimumEverFreeHeapSize()`, `xPortGetFreeHeapSize()` và high-water mark mỗi task, cộng buffer thực và margin stack ISR. Heap/stack/FPS ban đầu chưa được đo. Không gọi printf/newlib đồng thời nếu chưa có thiết kế an toàn RTOS và ngân sách.
+Số đo heap/stack khi chạy hiển thị **trên OLED** mỗi 1 s (dòng `HEAP` và `STK`); không dùng UART. Ghi vào `docs/EVALUATION.md` khi test kit.

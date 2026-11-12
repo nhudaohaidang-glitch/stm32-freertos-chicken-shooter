@@ -1,13 +1,13 @@
 # Phần cứng
 
+Ba ngoại vi chính: SPI1, I2C1, ADC1; GPIO/EXTI cho nút. Buzzer (TIM3) và UART đã bỏ khỏi phạm vi.
+
 | Ngoại vi | Chân STM32F103C8T6 | Thiết bị / ghi chú |
 |---|---|---|
 | SPI1 | PA5 SCK, PA7 MOSI, PA4 CS, PA3 DC, PB1 RESET | TFT ILI9341 2,8 inch, 240×320, RGB565 |
 | I2C1 | PB6 SCL, PB7 SDA | OLED SSD1306 128×64 |
 | ADC1 | PA0 IN0 VRx, PA1 IN1 VRy | Joystick KY-023 |
 | GPIO / EXTI | PB12 Fire, PB13 Start/Pause | Chống dội tại HMI |
-| TIM3_CH3 | PB0 | Buzzer thụ động |
-| USART1 | PA9 TX, PA10 RX | USB–TTL debug tùy chọn |
 | SWD | PA13 SWDIO, PA14 SWCLK | Dành riêng cho ST-Link |
 
 - Logic 3,3 V, GND chung. Joystick và OLED cấp 3,3 V. VCC/LED TFT theo nhãn và mạch module thực tế.
