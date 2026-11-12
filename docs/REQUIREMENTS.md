@@ -35,3 +35,7 @@ Người dùng yêu cầu tạo kho Git cho đề tài mới theo các tài li�
 - Nhánh ngoại vi được đổi tên theo phân công trong đề cương thay vì sao chép ba nhánh ví dụ của PDF.
 
 Chưa có thông tin về tên thành viên, ngày nộp, phiên bản module TFT thực tế, hướng màn hình, địa chỉ I2C OLED, clock mục tiêu, ảnh nối dây thực tế. Không tự điền các thông tin này thành yêu cầu chắc chắn. License riêng của phần nhóm viết chưa được chọn; không tự gán license MIT của FreeRTOS cho toàn bộ dự án.
+
+## Thu gọn phạm vi (cập nhật khi hoàn thiện)
+
+Theo plan môn học (tối thiểu 3 ngoại vi cơ bản, tối thiểu 1 chủ đề mục 6), nhóm giữ **SPI1 + I2C1 + ADC1** (+ GPIO/EXTI cho nút) và chọn chủ đề **State machine, event-driven firmware**. Bỏ buzzer PWM (TIM3), UART debug và DMA; các mục liên quan ở trên (PWM, sound queue, buzzer trong HMI) không còn áp dụng. Đối chiếu đầy đủ: [PLAN_HTN_MAPPING.md](PLAN_HTN_MAPPING.md).

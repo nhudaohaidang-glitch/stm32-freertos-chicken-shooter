@@ -1,80 +1,111 @@
 # Kiến trúc và hợp đồng API
 
+## Phạm vi
+
+Ba ngoại vi chính theo đề cương: **SPI1** (TFT ILI9341), **I2C1** (OLED SSD1306), **ADC1** (joystick). GPIO + EXTI dùng cho hai nút và chân điều khiển TFT. Đã bỏ khỏi phạm vi: buzzer PWM (TIM3), UART debug, DMA. Chủ đề mở rộng (mục 6 của plan): **State machine, event-driven firmware**.
+
 ## Phân lớp
 
-`BSP -> HAL/Drivers -> APP`. BSP giữ startup/clock/pin map. HAL che giấu thanh ghi và quy định timeout. Driver ILI9341/SSD1306 sẽ được thêm trong `hal/inc` / `hal/src` trên feature của người phụ trách. APP chỉ gọi API, không ghi trực tiếp thanh ghi trong task.
+`BSP -> HAL/Drivers -> APP`. BSP giữ startup/clock/pin map. HAL che giấu thanh ghi và quy định timeout. APP chỉ gọi API, không ghi trực tiếp thanh ghi trong task.
 
 ```mermaid
 flowchart LR
-    ADC[Joystick + nút] --> HMI[TASK_HMI: priority 3]
-    HMI -->|input queue| GAME[TASK_GAME: priority 3, 20 ms]
-    GAME -->|snapshot queue dài 1 + notification| RENDER[TASK_RENDER: priority 2]
-    GAME -->|sound queue| HMI
-    HMI --> PWM[Buzzer PWM]
-    RENDER --> SPI[TFT SPI]
-    RENDER --> I2C[OLED I2C]
+    BTN[Nút Fire/Start] -->|EXTI: vTaskNotifyGiveFromISR| HMI
+    JOY[Joystick ADC1] --> HMI[TASK_HMI: ưu tiên 3, 10 ms]
+    HMI -->|g_input_queue: sự kiện| GAME[TASK_GAME: ưu tiên 3, 20 ms, FSM]
+    GAME -->|g_render_queue dài 1 + Task Notification| RENDER[TASK_RENDER: ưu tiên 2]
+    RENDER -->|SPI1| TFT[TFT ILI9341]
+    RENDER -->|I2C1| OLED[OLED: HUD + số đo]
 ```
 
-TASK_GAME là nơi duy nhất sửa game state; RENDER chỉ nhận bản sao. GAME cập nhật chuyển động/va chạm bằng `vTaskDelayUntil` mỗi 20 ms, kết hợp đọc sự kiện. Không block chờ input vô hạn làm ngừng chuyển động.
+## Task
 
-## Task API
+Mỗi task có `task_xxx_create()` trả về `BaseType_t`, tự gán handle (`g_hmi_task`, `g_game_task`, `g_render_task`) để đo stack. Stack tính theo **words**. Không sửa `main.c` trong nhánh task. Logic FSM/game tách khỏi RTOS (`game_engine.c`) để unit test trên PC.
 
-Mỗi task có `task_xxx_create()` trả về `BaseType_t`. Hàm entry là `static`; cấp stack theo **words**, kiểm tra `pdPASS`. Hiện tại entry chỉ là khung chờ/chu kỳ, chưa có game engine hoặc driver hoạt động. Không sửa `main.c` trong nhánh task. Test độc lập bằng harness riêng trên nhánh feature, dùng mock queue/dummy data, không đưa harness vào điểm tích hợp chung.
+| Task | Ưu tiên | Nhịp | File | Việc chính |
+|---|---|---|---|---|
+| HMI | 3 | 10 ms + đánh thức bởi EXTI | `task_hmi.c` | ADC joystick (tâm, vùng chết, tốc độ 0..4), chống dội nút, auto-fire, gửi sự kiện |
+| GAME | 3 | 20 ms `xTaskDelayUntil` | `task_game.c`, `game_engine.c` | FSM, gà/đạn/trứng, va chạm, điểm, HP, đợt |
+| RENDER | 2 | theo notification (timeout 100 ms) | `task_render.c`, `render_tft.c`, `oled_view.c` | TFT vùng bẩn, OLED 10 Hz, đo FPS/heap/stack mỗi 1 s |
+
+## State machine, event-driven firmware
+
+Firmware hướng sự kiện: nút nhấn sinh ngắt EXTI -> ISR chỉ đánh thức HMI bằng `vTaskNotifyGiveFromISR` -> HMI chống dội và tạo **sự kiện** (`app_event_t`) gửi qua queue -> GAME đưa sự kiện vào **FSM**. Song song, GAME vẫn cập nhật định kỳ 20 ms (gà, đạn, trứng) — sự kiện không thay thế vòng cập nhật định kỳ. GAME là nơi duy nhất ghi game state; RENDER chỉ nhận bản sao qua queue + Task Notification.
+
+### Bảng chuyển trạng thái (`game_engine.c`)
+
+| Trạng thái | Sự kiện hợp lệ | Trạng thái sau / xử lý |
+|---|---|---|
+| MENU | START, START_PAUSE | PLAYING, khởi tạo ván mới |
+| PLAYING | MOVE_LEFT, MOVE_RIGHT, SHOOT | PLAYING, cập nhật tốc độ / bắn (có cooldown) |
+| PLAYING | PAUSE, START_PAUSE | PAUSED |
+| PLAYING | HIT, LOSE_HP | Cập nhật điểm / HP; HP về 0 -> GAME_OVER |
+| PLAYING | GAME_OVER | GAME_OVER |
+| PAUSED | RESUME, START_PAUSE | PLAYING, không bù thời gian đã dừng |
+| GAME_OVER | RESTART, START_PAUSE | PLAYING, reset ván |
+
+Mọi cặp (trạng thái, sự kiện) khác bị bỏ qua và đếm vào `ignored_events`. HIT/LOSE_HP/GAME_OVER do engine tự sinh khi va chạm (trúng gà, trúng trứng, gà xuống tới tầng người chơi), vẫn nhận từ queue để kiểm thử.
+
+```mermaid
+stateDiagram-v2
+    [*] --> MENU
+    MENU --> PLAYING: START / START_PAUSE
+    PLAYING --> PAUSED: PAUSE / START_PAUSE
+    PAUSED --> PLAYING: RESUME / START_PAUSE
+    PLAYING --> GAME_OVER: HP = 0 / gà chạm đáy / GAME_OVER
+    GAME_OVER --> PLAYING: RESTART / START_PAUSE
+```
+
+Kiểm chứng: `tests/host/test_engine.c` duyệt **đủ 44 ô** (4 trạng thái × 11 sự kiện) so với bảng trên, cùng các kịch bản pause không làm game chạy tiếp, mất máu -> GAME_OVER, restart, đợt mới và 200.000 khung ngẫu nhiên.
 
 ## IPC
 
 | Đối tượng | Hướng / kiểu | Quy tắc |
 |---|---|---|
-| `g_input_queue` | HMI -> GAME / `app_event_t` | 16 phần tử ban đầu; nhánh HMI/GAME thống nhất khi đầy: đếm drop, MOVE có thể gộp, SHOOT/PAUSE không bị bỏ âm thầm |
-| `g_sound_queue` | GAME -> HMI / `app_sound_t` | 8 phần tử; hiệu ứng không block GAME; đếm drop nếu đầy |
+| EXTI -> HMI | `vTaskNotifyGiveFromISR` | ISR chỉ ghi cạnh + đánh thức; chống dội trong task |
+| `g_input_queue` | HMI -> GAME / `app_event_t` | 16 phần tử, gửi không chờ. Đầy: MOVE bị bỏ và đếm `input_drops` (HMI gửi lại tốc độ mỗi 250 ms); SHOOT/START_PAUSE giữ cờ và gửi lại chu kỳ sau, đếm `input_retries` |
 | `g_render_queue` | GAME -> RENDER / `game_snapshot_t` | Dài 1; `xQueueOverwrite` bản sao mới nhất |
-| `g_render_task` | GAME notify RENDER | Gửi sau snapshot; notification được gộp; không có nghĩa mỗi notify tương ứng một frame |
+| `g_render_task` | GAME notify RENDER | Sau snapshot; notification được gộp |
+| Mutex trong HAL | SPI, I2C, ADC | Khóa bus có timeout hữu hạn, priority inheritance |
 
-`app_ipc_init()` được gọi một lần trước tạo task, kiểm tra lỗi cấp phát, dọn các queue đã tạo nếu lỗi. `app_render_publish()` chỉ gọi từ GAME sau khi RENDER được tạo. RENDER nhận notification rồi lấy snapshot, không giữ con trỏ vào state chung.
+### Snapshot v2 (`game_types.h`)
 
-Snapshot hiện chỉ có state/score/player_x/hp; nhóm cần PR API thêm dữ liệu gà/đạn/dirty rectangles trước khi triển khai đồ họa. Nếu bỏ qua nhiều snapshot, RENDER so sánh với **khung cuối thực sự đã vẽ** hoặc redraw đầy đủ bằng các strip nhỏ; không chỉ vẽ delta của snapshot bị mất.
+`state, score, frame, player_x, hp, wave, flags, formation_x/y, chicken_alive (bitmask 18 con), bullets[6], eggs[6], booms[4]` — 92 byte, không con trỏ. Vị trí gà suy ra từ góc đội hình + chỉ số hàng/cột. Ô trống có `x = GAME_POS_NONE`.
 
-Các hàm từ task dùng API thường; ISR chỉ dùng `...FromISR()` kèm yield khi cần. Không gọi `app_render_publish` từ ISR. Nếu cần bus mutex, dùng priority inheritance của FreeRTOS và timeout hữu hạn, không tự thay bằng spinlock. Chưa có mutex bus trong stub; driver phải bổ sung khi implement.
+### Vẽ TFT không framebuffer
+
+1. Vùng bẩn: với mỗi gà/đạn/trứng/nổ/tàu, hợp chữ nhật vị trí cũ (đã vẽ) và mới. Đổi trạng thái/đợt hoặc > 64 vùng -> vẽ toàn màn.
+2. Mỗi vùng: `ili9341_begin()` mở cửa sổ, ghép từng dải tối đa 640 pixel trong **một bộ đệm 1.280 B**: nền sao (băm tọa độ, không tốn RAM) -> sprite -> hộp chữ -> chữ, rồi gửi bằng SPI polling. Mỗi pixel ghi một lần với màu cuối: không nhấp nháy.
+3. RENDER so với **khung đã vẽ thực sự** (`s_drawn`), nên khi notification bị gộp vẫn không sót vết.
+
+Ước lượng lưu lượng khi thiết kế: trung bình ~3,4 KB/khung PLAYING (~1,5 ms chỉ tính truyền SPI ở 18 MHz), ~14,6 KB (~6,5 ms); vẽ toàn màn 153,6 KB (~68 ms). Đây không phải số đo hoặc giới hạn lưu lượng đã kiểm chứng: còn thời gian ghép pixel, lệnh và preemption. Dự án dùng polling theo phạm vi đã chốt; hiệu năng thực cần đo trên kit.
 
 ## HAL
 
-Header trong `hal/inc` là hợp đồng ban đầu. SPI/I2C/UART và ADC có timeout theo ms; 0 nghĩa không chờ. Không dùng `portMAX_DELAY` để lẩn tránh timeout. Trả mã lỗi; không trả HAL_OK khi thao tác chưa thực hiện. Stub hiện trả `HAL_NOT_IMPLEMENTED`.
+Mọi timeout tính bằng ms, hữu hạn; trả mã lỗi, không trả HAL_OK khi chưa thực hiện. Driver đọc clock thực từ RCC (`hal_sys`).
 
-- SPI: khóa cả giao dịch CS/DC + payload trong driver màn hình, không chỉ từng byte. Không gọi SPI đồng thời từ task khác nếu chưa có mutex transaction.
-- I2C: địa chỉ 7-bit chưa shift, có xử lý NACK/bus busy/timeout.
-- ADC: hai giá trị 12-bit, HMI làm calibration/dead-zone.
-- GPIO: bit 0 Fire, bit 1 Start/Pause, logic pressed; chống dội không delay trong ISR.
-- PWM: freq_hz=0 tắt buzzer; hiệu ứng theo thời gian task, không busy-wait.
-- DMA tùy chọn; khi thêm phải thống nhất buffer ownership và completion FromISR.
+- BSP: HSE 8 MHz × 9 = 72 MHz (dự phòng HSI 64 MHz), APB1 36 MHz, ADC 12 MHz, Flash 2 WS, NVIC 4 bit preempt, DWT đo chu kỳ, LED PC13. `configCPU_CLOCK_HZ = SystemCoreClock`.
+- SPI1 (TV1): master chỉ truyền, mode 0, 18 MHz, polling. `hal_spi_lock/unlock` khóa cả giao dịch CS/DC + payload.
+- ILI9341 (TV1): `begin/push/end`, `fill_rect`, `blit`. MADCTL cấu hình bằng macro. Init dùng `vTaskDelay` khi scheduler chạy.
+- I2C1 (TV3): 400 kHz polling, mutex, NACK/timeout/khôi phục bus. SSD1306: bộ đệm 1 KiB, chỉ gửi page có pixel đổi. `oled_view`: HUD + số đo.
+- ADC1 (TV2): hai kênh 12 bit, mutex, timeout. GPIO: bit 0 Fire, bit 1 Start/Pause, EXTI15_10 ưu tiên 6.
 
-## FSM cần triển khai ở nhánh GAME
-
-| State | Event hợp lệ | State sau / xử lý |
-|---|---|---|
-| MENU | START hoặc nút START_PAUSE | PLAYING, khởi tạo ván |
-| PLAYING | MOVE_LEFT / MOVE_RIGHT / SHOOT | PLAYING, cập nhật input |
-| PLAYING | PAUSE hoặc START_PAUSE | PAUSED |
-| PLAYING | HIT / LOSE_HP | Cập nhật điểm / HP; HP về 0 -> GAME_OVER |
-| PLAYING | GAME_OVER | GAME_OVER |
-| PAUSED | RESUME hoặc START_PAUSE | PLAYING, không nhảy chuyển động do thời gian đã pause |
-| GAME_OVER | RESTART hoặc START_PAUSE | PLAYING, reset ván |
-
-Event không hợp lệ bị bỏ qua có kiểm soát. Quy tắc nút START_PAUSE theo state là lựa chọn khởi đầu cần nhóm thống nhất, không phải kết quả test. Hàm chuyển state chưa được triển khai trong kho khung.
+Ngắt duy nhất gọi API FreeRTOS là EXTI15_10, ưu tiên số 6 ≥ `configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY` (5), kiểm tra bằng `#error` lúc biên dịch.
 
 ## Ngân sách RAM
 
 SRAM tối đa 20 KiB. Framebuffer 240×320×2 = 153.600 B không phù hợp.
 
-| Thành phần | Ngân sách ban đầu |
-|---|---:|
-| Heap FreeRTOS (gồm task stack/TCB/queue cấp phát động) | 10.240 B |
-| Stack HMI / GAME / RENDER | 192 / 256 / 384 words, nằm **trong heap**, không cộng lần hai |
-| Idle stack | 128 words, nằm trong heap |
-| Hai buffer TFT | 2 × (320 pixel × 2 dòng × 2 B) = 2.560 B, chưa cấp trong stub |
-| Buffer OLED | 1.024 B, chưa cấp trong stub |
-| MSP / ISR stack dự trữ | 1.024 B |
-| Còn lại | Globals kernel/driver/game state, alignment và margin |
+| Thành phần | Ngân sách đề cương | Thực tế (map file) |
+|---|---:|---:|
+| Heap FreeRTOS `ucHeap` (stack + TCB + queue + mutex) | — | 10.240 B |
+| Stack HMI / GAME / RENDER (trong heap) | — | 192 / 256 / 384 words |
+| Bộ đệm dải TFT | 2.560 B (2 bộ đệm, dự trù DMA) | 1.280 B (1 bộ đệm, polling) |
+| Bộ đệm OLED (8 × 129 B, kèm byte điều khiển) | 1.024 B | 1.032 B |
+| Danh sách vùng bẩn + sprite list + 2 snapshot | — | ~1,0 KB |
+| MSP / ISR stack dự trữ | — | 1.024 B |
+| **Tổng `.data + .bss` + MSP** | ≤ 20.480 B | **~14,8 KB** (`_ebss` = 0x20003750) |
 
-Buffer tối đa 320 pixel/line cho phép chọn portrait/landscape sau này; chiều rộng thực phải thống nhất với orientation. Không cấp hai framebuffer toàn màn hình. Linker assert không lấn vùng MSP; `.main_stack` nằm ở đỉnh RAM nên `--print-memory-usage` có thể báo RAM 100% do khoảng trống giữa `.bss` và stack: đọc địa chỉ `_ebss`, `.main_stack`, bảng `size` và map để tính dung lượng thật.
+`--print-memory-usage` báo RAM 100% vì `.main_stack` cố định ở đỉnh RAM; dung lượng thật đọc theo `_ebss` + 1 KiB MSP.
 
-Khi nghiệm thu: ghi `xPortGetMinimumEverFreeHeapSize()`, `xPortGetFreeHeapSize()` và high-water mark mỗi task, cộng buffer thực và margin stack ISR. Heap/stack/FPS ban đầu chưa được đo. Không gọi printf/newlib đồng thời nếu chưa có thiết kế an toàn RTOS và ngân sách.
+Số đo heap/stack khi chạy hiển thị **trên OLED** mỗi 1 s (dòng `HEAP` và `STK`); không dùng UART. Ghi vào `docs/EVALUATION.md` khi test kit.

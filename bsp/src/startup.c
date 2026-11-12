@@ -1,8 +1,10 @@
 #include <stdint.h>
+#include "bsp.h"
 extern uint32_t _estack, _sidata, _sdata, _edata, _sbss, _ebss;
 extern int main(void);
 void Reset_Handler(void);
-void Default_Handler(void) { for (;;) { __asm volatile ("nop"); } }
+/* Ngắt/fault chưa có handler: dừng an toàn, LED PC13 nháy nhanh để dễ nhận biết. */
+void Default_Handler(void) { bsp_panic(); }
 void SVC_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
