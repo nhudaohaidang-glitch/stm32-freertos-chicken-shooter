@@ -54,7 +54,7 @@ git pull --ff-only origin develop
 git switch -c feature/task-hmi
 ```
 
-Tương tự: `feature/task-game`, `feature/task-render`, nhánh hỗ trợ `feature/ipc-audio-tests`. TV2 làm HMI/GAME theo kế hoạch, không dùng một branch chung cho nhiều người cùng force-push. Mỗi task ở app/src/task_xxx.c và app/inc/task_xxx.h; không sửa main.c. Test độc lập bằng harness/mock queue trước khi PR về develop.
+Tương tự: `feature/task-game`, `feature/task-render`, nhánh hỗ trợ `feature/oled-view-tests`. TV2 làm HMI/GAME theo kế hoạch, không dùng một branch chung cho nhiều người cùng force-push. Mỗi task ở app/src/task_xxx.c và app/inc/task_xxx.h; không sửa main.c. Test độc lập bằng harness/mock queue trước khi PR về develop.
 
 Trong lúc làm, đồng bộ branch cá nhân:
 

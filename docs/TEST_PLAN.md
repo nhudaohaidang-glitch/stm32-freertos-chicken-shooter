@@ -2,9 +2,15 @@
 
 ## Phân biệt kết quả
 
-**Đã chạy trong môi trường hiện tại:** biên dịch/liên kết khung bằng ARM GCC 14.2.1 với `-Wall -Wextra -Werror`, tạo ELF/BIN/HEX/MAP. Không có bo mạch/ST-Link trong phiên; chưa test scheduler, driver hoặc game trên kit. Chưa có unit test engine vì engine mới là API/khung, không tạo test rỗng để báo xanh.
+**Đã chạy không cần kit** (xem số liệu trong `docs/EVALUATION.md`):
 
-`make check` là build + size, không phải unit test hoặc test phần cứng. GitHub Actions cũng chỉ build.
+| Lệnh | Kiểm tra |
+|---|---|
+| `make clean && make -j4 check` | Build firmware tích hợp với `-Wall -Wextra -Werror`, không warning |
+| `make -C tests/hw/<adc_gpio\|i2c_oled\|spi_tft>` | Build ba harness test kit |
+| `make -C tests/host test` | Unit test FSM: đủ 44 cặp (trạng thái, sự kiện), pause, va chạm, HP, đợt, 200.000 khung ngẫu nhiên; ASan/UBSan |
+
+**Chưa chạy trong phiên phát triển:** mọi mục cần kit bên dưới. Build/test PC xanh không chứng minh nối dây, timing ngắt, tốc độ SPI thực hay FPS thật.
 
 ## M1 — driver trên kit (chưa chạy)
 
@@ -15,15 +21,13 @@
 | ADC | Hai trục đủ dải, trung tâm/dead-zone, không vượt 3,3 V |
 | GPIO/EXTI | Fire/Pause đúng cực tính, một lần nhấn không lặp do dội; ISR RTOS priority đúng |
 | I2C/OLED | Địa chỉ thật, cập nhật điểm/HP/state, NACK/timeout không treo task |
-| PWM/buzzer | Hiệu ứng bắn/trúng/game over, thời gian không block input/game |
-| UART tùy chọn | Log đọc được, không gây treo hoặc phá timing |
 
 ## M2 — task/FSM (chưa chạy)
 
 - HMI phát đúng MOVE/SHOOT/START_PAUSE; kiểm tra queue đầy, drop counter và nhấn nhanh.
 - GAME giữ nhịp 20 ms dù không có input; chuyển state hợp lệ, bỏ event sai state, va chạm/điểm/HP, restart reset đúng.
 - PAUSED giữ nguyên tiến trình game; resume không nhảy vị trí do khoảng pause.
-- RENDER chỉ đọc bản sao; coalesced notification không mất vùng cần xóa của frame cuối; không rách hình do buffer bị ghi khi DMA đang dùng.
+- RENDER chỉ đọc bản sao; coalesced notification không mất vùng cần xóa của frame cuối; không vệt/sót vùng khi khung bị gộp.
 - Kiểm tra task_create thất bại và IPC cấp phát thiếu: fail rõ ràng, không khởi động dang dở.
 
 ## M3 — demo tích hợp (chưa chạy)
@@ -31,7 +35,7 @@
 1. Bật nguồn -> MENU; Start -> PLAYING.
 2. Joystick di chuyển, Fire sinh đạn; gà di chuyển và va chạm đổi điểm/HP.
 3. Pause/Resume; HP về 0 -> GAME_OVER; Restart tạo ván mới.
-4. OLED phản ánh đúng state/điểm/HP; buzzer đúng sự kiện.
+4. OLED phản ánh đúng state/điểm/HP; dòng FPS/HEAP/STK cập nhật mỗi 1 s.
 5. Đo FPS trên màn hình thật, heap hiện tại/tối thiểu, stack high-water mark mỗi task, RAM từ map. Đo thời gian GAME có trễ chu kỳ hay không.
 6. Thử input dồn dập, pause nhiều lần, nhiều đạn/gà và chạy lâu; ghi thời lượng thực tế, lỗi/drop/malloc/stack hook.
 
