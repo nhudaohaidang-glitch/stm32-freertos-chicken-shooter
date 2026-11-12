@@ -2,7 +2,7 @@
 
 Tài liệu tách rõ **số đã có không cần kit** và **số phải đo trên kit**. Không chép số kiểm thử PC sang cột kit.
 
-**Trạng thái: CHƯA ĐỦ BẰNG CHỨNG NGHIỆM THU KIT / CHƯA SẴN SÀNG RELEASE.** Nhóm đã báo lại `HEAP 5384/5384` và `STK 148/202/288` trong ảnh danh sách việc còn lại; tin nhắn bổ sung báo FPS hiển thị khoảng **37–50** (có giá trị **50**) và T **15561–21xxx µs**. Giữ nguyên phần `21xxx` vì chưa có số chính xác. Chưa có ảnh OLED/log gốc, ngày đo, commit đã nạp, clock, tình huống đo hoặc kết quả từng bước kiểm thử chức năng. Các số đã báo được ghi riêng ở mục 3; chưa đánh dấu PASS hay hoàn tất nghiệm thu.
+**Trạng thái: ĐÃ CÓ BÁO CÁO ĐO KIT VÀ XÁC NHẬN 12/12 BƯỚC CHỨC NĂNG; CHỜ REVIEW TRƯỚC RELEASE.** Nguyễn Khắc Lộc báo số đo ngày **12/11/2026**, bản `develop` **`1c21dd8`**, clock **72 MHz**, lúc đang chơi và khi mất máu: FPS hiển thị khoảng **30–50**, T **15561–21xxx µs**, `HEAP 5384/5384`, `STK 148/202/288`. Chủ repo xác nhận trong chat rằng đã thử đạt đủ cả 12 bước ở mục 4. Đây là kết quả nhóm cung cấp; CI/phiên cloud không thực hiện test kit. T vẫn là khoảng xấp xỉ và cách tính FPS vẫn cần review theo mục 1; chưa phát hành `v1.0.0`.
 
 ## 1. Cách lấy số liệu trên kit
 
@@ -42,23 +42,33 @@ Lưu lượng SPI ước lượng khi thiết kế: trung bình ~3,4 KB/khung (~
 
 ## 3. Bảng đo trên kit (nhóm điền, đọc trên OLED)
 
-Số liệu nhận từ nhóm qua ảnh danh sách công việc và tin nhắn bổ sung, **chưa có metadata và bằng chứng đo gốc đi kèm**:
+Nguồn số đo: [review của Nguyễn Khắc Lộc trên PR #15](https://github.com/nhudaohaidang-glitch/stm32-freertos-chicken-shooter/pull/15#pullrequestreview-5876354053). Review xác nhận ngày đo, commit, clock và tình huống; FPS thấp nhất khoảng **30 khi mất máu**, cao nhất **50**. Bảng dùng số cập nhật này thay cho khoảng 37–50 được báo trước đó.
+
+| Thông tin lần đo | Giá trị nhóm xác nhận |
+|---|---|
+| Người báo số đo | Nguyễn Khắc Lộc — `bestteemo1324-svg` |
+| Ngày đo | 12/11/2026 |
+| Commit đã nạp | `1c21dd85bf7a48c1644bf75db43e5e0d2deed5ee` (`develop`) |
+| Clock | 72 MHz, theo báo cáo người test |
+| Tình huống | PLAYING và khi mất máu |
+| Ảnh OLED | Người test cho biết đã gửi qua tin nhắn; chưa đính kèm ảnh/log gốc vào tài liệu này |
 
 | Số liệu được báo | Giá trị | Đơn vị / thứ tự | Mức xác nhận |
 |---|---|---|---|
-| HEAP free/min | 5384 / 5384 | byte | Nhóm báo lại; chưa xác định commit, thời điểm và tình huống |
-| STK H/G/R | 148 / 202 / 288 | word còn trống nhỏ nhất của HMI / GAME / RENDER | Nhóm báo lại; chưa xác định commit, thời điểm và tình huống |
-| FPS hiển thị | khoảng 37–50; có giá trị 50 | Số trên dòng FPS của OLED | Tin nhắn báo lại; chưa xác định commit/tình huống hoặc xác nhận cửa sổ đo đúng 1 s |
-| T | 15561–21xxx | µs | Tin nhắn báo lại; giữ nguyên `21xxx`, chưa có giới hạn trên chính xác |
+| HEAP free/min | 5384 / 5384 | byte | Người test báo trong review, metadata như bảng trên |
+| STK H/G/R | 148 / 202 / 288 | word còn trống nhỏ nhất của HMI / GAME / RENDER | Người test báo trong review, metadata như bảng trên |
+| FPS hiển thị | khoảng 30–50 | Số trên dòng FPS của OLED | Khoảng thấp nhất khoảng 30 khi mất máu; chưa xác minh cách chuẩn hóa theo thời gian thực |
+| T | 15561–21xxx | µs | Người test báo khoảng xấp xỉ; giữ nguyên `21xxx`, chưa có giới hạn trên chính xác |
 
-Tin nhắn bổ sung nguyên văn: `50  15561-21xxx` và `Fps 37-50`. Tương ứng, T được báo từ 15,561 ms đến khoảng 21 ms; đây chưa phải khoảng có giới hạn trên chính xác. Khoảng FPS là số hiển thị được báo lại, chưa phải kết quả đã xác minh theo thời gian thực.
+T được báo từ 15,561 ms đến khoảng 21,xxx ms; chưa tự chuyển `21xxx` thành một số nguyên chính xác. Khoảng FPS là số hiển thị người test quan sát, chưa phải kết quả đã xác minh theo thời gian thực.
 
-Không gán các số trên vào MENU, PLAYING hay chạy 10 phút khi chưa biết tình huống thực tế, và không coi là các giá trị được lấy đồng thời. `STK` là mức còn trống nhỏ nhất từng có, không phải lượng stack đã dùng. Nhóm cần xác nhận tình huống PLAYING và T đầy đủ; với bản hiện tại phải review cách tính FPS nêu ở mục 1.
+Các số thuộc lần test PLAYING/khi mất máu nêu trên; chưa tách theo từng wave hoặc xác nhận lấy đồng thời. `STK` là mức còn trống nhỏ nhất từng có, không phải lượng stack đã dùng. Giữ riêng các phép đo MENU, tải nhiều trứng, 10 lần pause/resume và chạy 10 phút nếu chưa có số tương ứng. Với bản hiện tại phải review cách tính FPS nêu ở mục 1.
 
-Nhóm bổ sung ngày đo, commit đã nạp, clock xác nhận và ảnh/log cho từng dòng bên dưới. Không dùng số minh họa ở mục 1 làm kết quả.
+Nhóm bổ sung ảnh/log và số riêng cho từng kịch bản chưa đo bên dưới. Không dùng số minh họa ở mục 1 làm kết quả.
 
 | Ngày | Commit | Clock | Tình huống | FPS | T (µs) | HEAP free/min | STK H/G/R | Ghi chú |
 |---|---|---|---|---|---|---|---|---|
+| 12/11/2026 | `1c21dd8` | 72 MHz (nhóm báo) | PLAYING và khi mất máu | khoảng 30–50 | 15561–21xxx | 5384/5384 | 148/202/288 | Theo review PR #15; chưa tách theo wave, T xấp xỉ |
 | | | CHƯA ĐO | MENU đứng yên | | | | | |
 | | | CHƯA ĐO | PLAYING đợt 1, giữ Fire | | | | | |
 | | | CHƯA ĐO | PLAYING đợt ≥ 3, nhiều trứng | | | | | |
@@ -67,22 +77,22 @@ Nhóm bổ sung ngày đo, commit đã nạp, clock xác nhận và ảnh/log ch
 
 ## 4. Kiểm thử chức năng trên kit (nhóm điền)
 
-Chưa nhận kết quả theo từng bước của bản tích hợp. Để trống cột thực tế/PASS/FAIL đến khi người test cung cấp bằng chứng; kết quả host test không thay cho các bước này.
+Chủ repo `nhudaohaidang-glitch` xác nhận trong chat ngày 12/11/2026: **"Đã thử đạt đầy đủ cả 12 bước"**. Bảng ghi PASS theo xác nhận test kit của nhóm cho bản tích hợp đang được báo cáo (`1c21dd8`); không coi đây là kết quả do CI hoặc phiên cloud thực hiện. Chưa có ảnh/log riêng cho từng bước đính kèm trong tài liệu.
 
 | # | Bước | Kỳ vọng | Thực tế | PASS/FAIL |
 |---|---|---|---|---|
-| 1 | Cấp nguồn | TFT hiện MENU, OLED `MENU`, LED PC13 không nháy nhanh | | |
-| 2 | Nhấn Start | PLAYING, gà di chuyển, OLED điểm 000000, 3 tim | | |
-| 3 | Gạt joystick trái/phải | Tàu đi đúng hướng, đứng yên khi thả | | |
-| 4 | Nhấn / giữ Fire | Đạn bay; giữ thì bắn tự động | | |
-| 5 | Bắn trúng gà | Gà nổ, điểm +10 × đợt | | |
-| 6 | Trúng trứng | Mất 1 tim, tàu nhấp nháy ~1 s | | |
-| 7 | Start khi đang chơi | PAUSED, mọi thứ đứng yên; nhấn lại tiếp tục đúng chỗ | | |
-| 8 | Hết 3 tim / gà xuống đáy | GAME OVER + điểm | | |
-| 9 | Start ở GAME OVER | Ván mới, điểm về 0 | | |
-| 10 | Nhấn Fire ở MENU / PAUSED | Không có tác dụng (FSM bỏ qua sự kiện sai trạng thái) | | |
-| 11 | Rút dây SDA OLED rồi cắm lại | Game không dừng, OLED tự hiện lại | | |
-| 12 | Nhấn nút liên tục rất nhanh | Không treo, mỗi lần nhấn chỉ một sự kiện | | |
+| 1 | Cấp nguồn | TFT hiện MENU, OLED `MENU`, LED PC13 không nháy nhanh | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 2 | Nhấn Start | PLAYING, gà di chuyển, OLED điểm 000000, 3 tim | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 3 | Gạt joystick trái/phải | Tàu đi đúng hướng, đứng yên khi thả | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 4 | Nhấn / giữ Fire | Đạn bay; giữ thì bắn tự động | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 5 | Bắn trúng gà | Gà nổ, điểm +10 × đợt | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 6 | Trúng trứng | Mất 1 tim, tàu nhấp nháy ~1 s | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 7 | Start khi đang chơi | PAUSED, mọi thứ đứng yên; nhấn lại tiếp tục đúng chỗ | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 8 | Hết 3 tim / gà xuống đáy | GAME OVER + điểm | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 9 | Start ở GAME OVER | Ván mới, điểm về 0 | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 10 | Nhấn Fire ở MENU / PAUSED | Không có tác dụng (FSM bỏ qua sự kiện sai trạng thái) | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 11 | Rút dây SDA OLED rồi cắm lại | Game không dừng, OLED tự hiện lại | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
+| 12 | Nhấn nút liên tục rất nhanh | Không treo, mỗi lần nhấn chỉ một sự kiện | Nhóm xác nhận đã thử đạt | PASS (nhóm xác nhận) |
 
 ## 5. Điều kiện chốt release v1.0.0
 
