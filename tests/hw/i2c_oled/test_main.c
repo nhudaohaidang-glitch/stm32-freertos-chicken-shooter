@@ -1,5 +1,5 @@
 /*
- * Harness kiểm tra M1 cho nhánh feature/hal-i2c-pwm. KHÔNG phải main.c tích hợp.
+ * Harness kiểm tra M1 cho I2C1 + OLED SSD1306 (nhánh feature/hal-i2c-pwm). KHÔNG phải main.c tích hợp.
  * Chạy ở clock reset mặc định (HSI 8 MHz, khớp configCPU_CLOCK_HZ hiện tại),
  * không gọi bsp_system_init() vì BSP còn là stub.
  *
@@ -7,16 +7,13 @@
  *  - LED PC13 nháy 2 Hz: scheduler chạy, polling I2C không chiếm hết CPU.
  *  - LED nháy nhanh 10 Hz: không tìm thấy thiết bị I2C (kiểm tra dây/nguồn OLED).
  *  - OLED: địa chỉ đo được, thời gian flush toàn màn/1 page, kết quả test NACK,
- *    hiệu ứng đang phát, bộ đếm và thanh HP chạy (chỉ 2 page cập nhật).
- *  - Buzzer: lần lượt SHOOT -> HIT -> GAME_OVER mỗi 1,5 s.
+ *    bộ đếm và thanh chạy (chỉ 2 page cập nhật).
  */
 #include "FreeRTOS.h"
 #include "task.h"
 #include "hal_sys.h"
 #include "hal_i2c.h"
-#include "hal_pwm.h"
 #include "ssd1306.h"
-#include "buzzer.h"
 
 #define REG(a) (*(volatile uint32_t *)(a))
 #define RCC_APB2ENR REG(0x40021018UL)
@@ -90,15 +87,12 @@ static void test_task(void *arg)
 
     vTaskDelay(pdMS_TO_TICKS(150U));          /* OLED cần >= 100 ms sau cấp nguồn */
     const hal_status_t i2c_st = hal_i2c_init();
-    const hal_status_t pwm_st = hal_pwm_init();
-    buzzer_init();
 
     uint8_t found = 0U;
     s_oled_addr = (i2c_st == HAL_OK) ? scan_bus(&found) : 0U;
     if (s_oled_addr == 0U) {
-        s_blink_ms = 50U;                     /* lỗi: LED nháy nhanh + âm báo nếu PWM ok */
-        if (pwm_st == HAL_OK) { (void)buzzer_play(BUZZER_FX_GAME_OVER, now_ms()); }
-        for (;;) { (void)buzzer_update(now_ms()); vTaskDelay(pdMS_TO_TICKS(10U)); }
+        s_blink_ms = 50U;                     /* lỗi: LED nháy nhanh */
+        for (;;) { vTaskDelay(pdMS_TO_TICKS(1000U)); }
     }
 
     if (ssd1306_init(s_oled_addr, I2C_TIMEOUT_MS) != HAL_OK) {
@@ -123,12 +117,12 @@ static void test_task(void *arg)
     s_nack_result = hal_i2c_write(absent, (const uint8_t *)"\x00", 1U, I2C_TIMEOUT_MS);
     const uint32_t nack_ms = now_ms() - t0;
 
-    line(0, "HAL I2C+PWM TEST");
+    line(0, "HAL I2C OLED TEST");
     p = put_str(buf, "ADDR 0X"); p = put_hex2(p, s_oled_addr);
     p = put_str(p, " DEV "); p = put_dec(p, found, 1U); *p = '\0';
     line(1, buf);
     p = put_str(buf, "PCLK1 "); p = put_dec(p, hal_sys_pclk1_hz() / 1000000UL, 1U);
-    p = put_str(p, "MHZ PWM "); p = put_str(p, (pwm_st == HAL_OK) ? "OK" : "ERR"); *p = '\0';
+    p = put_str(p, "MHZ"); *p = '\0';
     line(2, buf);
     p = put_str(buf, "FULL "); p = put_dec(p, full_ms, 1U);
     p = put_str(p, "MS PAGE "); p = put_dec(p, page_ms, 1U); p = put_str(p, "MS"); *p = '\0';
@@ -138,23 +132,14 @@ static void test_task(void *arg)
     line(4, buf);
     flush_or_count();
 
-    static const char *const fx_name[BUZZER_FX_COUNT] = { "SHOOT", "HIT", "GAME OVER" };
     TickType_t last = xTaskGetTickCount();
     uint32_t tick10 = 0U;
     uint32_t counter = 0U;
-    unsigned fx = 0U;
 
     for (;;) {
         vTaskDelayUntil(&last, pdMS_TO_TICKS(10U));
         tick10++;
-        (void)buzzer_update(now_ms());
 
-        if (tick10 % 150U == 1U) {             /* mỗi 1,5 s đổi hiệu ứng */
-            (void)buzzer_play((buzzer_fx_t)fx, now_ms());
-            p = put_str(buf, "FX "); p = put_str(p, fx_name[fx]); *p = '\0';
-            line(5, buf);
-            fx = (fx + 1U) % (unsigned)BUZZER_FX_COUNT;
-        }
         if (tick10 % 10U == 0U) {              /* mỗi 100 ms: chỉ page 6, 7 thay đổi */
             counter++;
             p = put_str(buf, "CNT "); p = put_dec(p, counter, 5U);
