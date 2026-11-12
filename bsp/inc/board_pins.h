@@ -13,8 +13,6 @@ typedef struct { char port; uint8_t pin; } board_pin_t;
 #define BOARD_JOY_Y    ((board_pin_t){'A', 1})
 #define BOARD_FIRE     ((board_pin_t){'B', 12})
 #define BOARD_PAUSE    ((board_pin_t){'B', 13})
-#define BOARD_BUZZER   ((board_pin_t){'B', 0}) /* TIM3_CH3 */
-#define BOARD_UART_TX  ((board_pin_t){'A', 9})
-#define BOARD_UART_RX  ((board_pin_t){'A', 10})
-/* PA13/PA14 reserved for SWD. Logic level: 3.3 V, common GND. */
+/* PA13/PA14 reserved for SWD. Logic level: 3.3 V, common GND.
+ * Ba ngoại vi chính: SPI1 (TFT), I2C1 (OLED), ADC1 (joystick); GPIO cho nút và chân TFT. */
 #endif

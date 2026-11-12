@@ -1,7 +1,11 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
-/* Bootstrap assumption: HSI 8 MHz. BSP owner must validate or update this. */
-#define configCPU_CLOCK_HZ 8000000UL
+#include <stdint.h>
+/* Clock thực do BSP cấu hình (72 MHz HSE+PLL, dự phòng 64 MHz HSI+PLL).
+ * Dùng biến thay hằng số để SysTick luôn khớp clock đang chạy: port.c chỉ đọc
+ * giá trị này lúc vTaskStartScheduler(), sau bsp_system_init(). */
+extern uint32_t SystemCoreClock;
+#define configCPU_CLOCK_HZ (SystemCoreClock)
 #define configTICK_RATE_HZ 1000U
 #define configUSE_PREEMPTION 1
 #define configUSE_TIME_SLICING 1
@@ -33,6 +37,7 @@
 #define INCLUDE_uxTaskGetStackHighWaterMark 1
 #define INCLUDE_xTaskGetSchedulerState 1
 #define INCLUDE_vTaskDelete 1
+#define INCLUDE_xTaskGetIdleTaskHandle 1
 void app_assert_failed(const char *file, int line);
 #define configASSERT(x) do { if (!(x)) app_assert_failed(__FILE__, __LINE__); } while (0)
 #define vPortSVCHandler SVC_Handler
