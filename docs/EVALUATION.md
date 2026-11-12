@@ -2,7 +2,7 @@
 
 Tài liệu tách rõ **số đã có không cần kit** và **số phải đo trên kit**. Không chép số kiểm thử PC sang cột kit.
 
-**Trạng thái: CHƯA TEST trên kit.** Chưa có số đo FPS, thời gian vẽ, clock thực, heap/stack hoặc kết quả chức năng phần cứng. Giữ bảng mục 3 và 4 chờ nhóm điền sau khi chạy thật.
+**Trạng thái: CHƯA ĐỦ BẰNG CHỨNG NGHIỆM THU KIT / CHƯA SẴN SÀNG RELEASE.** Nhóm đã báo lại `HEAP 5384/5384` và `STK 148/202/288` trong ảnh danh sách việc còn lại; tin nhắn bổ sung báo FPS hiển thị khoảng **37–50** (có giá trị **50**) và T **15561–21xxx µs**. Giữ nguyên phần `21xxx` vì chưa có số chính xác. Chưa có ảnh OLED/log gốc, ngày đo, commit đã nạp, clock, tình huống đo hoặc kết quả từng bước kiểm thử chức năng. Các số đã báo được ghi riêng ở mục 3; chưa đánh dấu PASS hay hoàn tất nghiệm thu.
 
 ## 1. Cách lấy số liệu trên kit
 
@@ -42,6 +42,21 @@ Lưu lượng SPI ước lượng khi thiết kế: trung bình ~3,4 KB/khung (~
 
 ## 3. Bảng đo trên kit (nhóm điền, đọc trên OLED)
 
+Số liệu nhận từ nhóm qua ảnh danh sách công việc và tin nhắn bổ sung, **chưa có metadata và bằng chứng đo gốc đi kèm**:
+
+| Số liệu được báo | Giá trị | Đơn vị / thứ tự | Mức xác nhận |
+|---|---|---|---|
+| HEAP free/min | 5384 / 5384 | byte | Nhóm báo lại; chưa xác định commit, thời điểm và tình huống |
+| STK H/G/R | 148 / 202 / 288 | word còn trống nhỏ nhất của HMI / GAME / RENDER | Nhóm báo lại; chưa xác định commit, thời điểm và tình huống |
+| FPS hiển thị | khoảng 37–50; có giá trị 50 | Số trên dòng FPS của OLED | Tin nhắn báo lại; chưa xác định commit/tình huống hoặc xác nhận cửa sổ đo đúng 1 s |
+| T | 15561–21xxx | µs | Tin nhắn báo lại; giữ nguyên `21xxx`, chưa có giới hạn trên chính xác |
+
+Tin nhắn bổ sung nguyên văn: `50  15561-21xxx` và `Fps 37-50`. Tương ứng, T được báo từ 15,561 ms đến khoảng 21 ms; đây chưa phải khoảng có giới hạn trên chính xác. Khoảng FPS là số hiển thị được báo lại, chưa phải kết quả đã xác minh theo thời gian thực.
+
+Không gán các số trên vào MENU, PLAYING hay chạy 10 phút khi chưa biết tình huống thực tế, và không coi là các giá trị được lấy đồng thời. `STK` là mức còn trống nhỏ nhất từng có, không phải lượng stack đã dùng. Nhóm cần xác nhận tình huống PLAYING và T đầy đủ; với bản hiện tại phải review cách tính FPS nêu ở mục 1.
+
+Nhóm bổ sung ngày đo, commit đã nạp, clock xác nhận và ảnh/log cho từng dòng bên dưới. Không dùng số minh họa ở mục 1 làm kết quả.
+
 | Ngày | Commit | Clock | Tình huống | FPS | T (µs) | HEAP free/min | STK H/G/R | Ghi chú |
 |---|---|---|---|---|---|---|---|---|
 | | | CHƯA ĐO | MENU đứng yên | | | | | |
@@ -51,6 +66,8 @@ Lưu lượng SPI ước lượng khi thiết kế: trung bình ~3,4 KB/khung (~
 | | | CHƯA ĐO | Chạy liên tục 10 phút | | | | | |
 
 ## 4. Kiểm thử chức năng trên kit (nhóm điền)
+
+Chưa nhận kết quả theo từng bước của bản tích hợp. Để trống cột thực tế/PASS/FAIL đến khi người test cung cấp bằng chứng; kết quả host test không thay cho các bước này.
 
 | # | Bước | Kỳ vọng | Thực tế | PASS/FAIL |
 |---|---|---|---|---|
@@ -66,3 +83,12 @@ Lưu lượng SPI ước lượng khi thiết kế: trung bình ~3,4 KB/khung (~
 | 10 | Nhấn Fire ở MENU / PAUSED | Không có tác dụng (FSM bỏ qua sự kiện sai trạng thái) | | |
 | 11 | Rút dây SDA OLED rồi cắm lại | Game không dừng, OLED tự hiện lại | | |
 | 12 | Nhấn nút liên tục rất nhanh | Không treo, mỗi lần nhấn chỉ một sự kiện | | |
+
+## 5. Điều kiện chốt release v1.0.0
+
+- [ ] Điền đủ bằng chứng ở mục 3 và 4 cho commit tích hợp thực sự được nạp lên kit.
+- [ ] Review/xử lý cách tính FPS theo thời gian thực ở mục 1 trước khi dùng số FPS để nghiệm thu.
+- [ ] PR cập nhật tài liệu vào `develop` được thành viên khác review và merge.
+- [ ] CI của commit cuối trên `develop` và PR release thành công.
+- [ ] PR release #2 (`develop -> main`) được người khác review và merge bằng **Create a merge commit**.
+- [ ] Sau merge, leader tạo tag `v1.0.0` trỏ vào commit release trên `main`; không gắn tag vào bootstrap hoặc commit chưa nghiệm thu.
