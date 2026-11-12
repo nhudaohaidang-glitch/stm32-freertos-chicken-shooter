@@ -4,11 +4,11 @@ Phạm vi: **3 ngoại vi chính SPI1 + I2C1 + ADC1** (GPIO/EXTI cho nút), ch�
 
 | Vai trò | GitHub | Ngoại vi | Nhánh HAL (M1) | Nhánh APP (M2) |
 |---|---|---|---|---|
-| Leader + TV1 | `nhudaohaidang-glitch` | SPI1 (TFT) + cấu hình chung | `feature/bsp-clock`, `feature/hal-spi-tft` | `feature/app-api`, `feature/task-render`, `integration/system-v1` |
+| Leader + TV1 | `nhudaohaidang-glitch` | SPI1 (TFT) + cấu hình chung | `feature/bsp-clock`, `feature/hal-spi-tft` | `feature/app-api` (thống nhất với TV3), `feature/task-render`, `integration/system-v1` |
 | TV2 | `hoangdat06022005-commits` | ADC1 (joystick) + GPIO/EXTI (nút) | `feature/hal-adc-gpio` | `feature/task-game` (FSM) |
-| TV3 — Nguyễn Khắc Lộc | `bestteemo1324-svg` | I2C1 (OLED) | `feature/hal-i2c-pwm` (phần PWM đã gỡ) | `feature/task-hmi`, `feature/oled-view-tests` (OLED HUD + số đo, unit test FSM, CI) |
+| TV3 — Nguyễn Khắc Lộc | `bestteemo1324-svg` | I2C1 (OLED) | `feature/hal-i2c-pwm` (phần PWM đã gỡ) | `feature/app-api` (thực hiện sau khi thống nhất với leader), `feature/task-hmi`, `feature/oled-view-tests` (OLED HUD + số đo, unit test FSM, CI) |
 
-Phân công trên được đối chiếu với lịch sử đã merge vào `develop`: HMI do Nguyễn Khắc Lộc thực hiện (`64843d2`), GAME do `hoangdat06022005-commits` thực hiện (`cc88d51`), OLED view do Nguyễn Khắc Lộc thực hiện (`821c02f`). TV2 giữ phần driver ADC/GPIO; TV3 dùng API đó trong task HMI. Mỗi người commit/push bằng tài khoản của mình; người khác review PR. TV3 viết `oled_view.c` để TV1 gọi trong RENDER, tránh hai người cùng sửa `task_render.c`. Không thêm task thứ tư.
+Phân công trên được đối chiếu với lịch sử đã merge vào `develop`: API ứng dụng do leader và TV3 thống nhất, TV3 thực hiện (`2f94457`: tài nguyên RTOS/snapshot v2; `babffde`: IPC); HMI do Nguyễn Khắc Lộc thực hiện (`64843d2`), GAME do `hoangdat06022005-commits` thực hiện (`cc88d51`), OLED view do Nguyễn Khắc Lộc thực hiện (`821c02f`). TV2 giữ phần driver ADC/GPIO; TV3 dùng API đó trong task HMI. Mỗi người commit/push bằng tài khoản của mình; người khác review PR. TV3 viết `oled_view.c` để TV1 gọi trong RENDER, tránh hai người cùng sửa `task_render.c`. Không thêm task thứ tư.
 
 ## M0 — khởi tạo (đã chuẩn bị cục bộ)
 
@@ -37,7 +37,7 @@ Build được khung không có nghĩa M1 hoàn thành. Workflow `firmware` đã
 
 | PR -> develop | Người làm | Nội dung |
 |---|---|---|
-| `feature/app-api` | Leader | Bảng tài nguyên `app_cfg.h`, snapshot v2 `game_types.h`, helper IPC, ARCHITECTURE |
+| `feature/app-api` | Leader + TV3 thống nhất, TV3 thực hiện | Bảng tài nguyên `app_cfg.h`, snapshot v2 `game_types.h`, helper IPC, ARCHITECTURE; đối chiếu `2f94457`, `babffde` |
 | `feature/task-hmi` | TV3 — Nguyễn Khắc Lộc | `task_hmi.c`: dùng driver ADC/GPIO của TV2, chống dội, EXTI -> notification, auto-fire, sự kiện |
 | `feature/task-game` | TV2 | `game_engine.c` + `task_game.c`: **FSM**, va chạm, điểm, HP, đợt |
 | `feature/oled-view-tests` | TV3 | `oled_view.c` (HUD + FPS/heap/stack), unit test FSM 44 ô, CI |
